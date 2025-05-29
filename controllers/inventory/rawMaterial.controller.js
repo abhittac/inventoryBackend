@@ -44,6 +44,25 @@ class RawMaterialController {
       console.log('fabric_color_lower', fabric_color_lower);
       console.log('fabric_quality_lower', fabric_quality_lower);
       console.log('quantity', quantity);
+
+
+      // Check for duplicate entry
+      const existingMaterial = await RawMaterial.findOne({
+        category_name,
+        fabric_quality: fabric_quality_lower,
+        roll_size,
+        gsm,
+        fabric_color: fabric_color_lower,
+      });
+
+      if (existingMaterial) {
+        return res.status(409).json({
+          success: false,
+          message: "Duplicate entry: This raw material already exists.",
+        });
+      }
+
+
       // Create new raw material instance
       const rawMaterial = await RawMaterial.create({
         category_name,
