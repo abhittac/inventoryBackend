@@ -5,6 +5,8 @@ const SalesController = require('../controllers/admin/sales.controller');
 const DeliveryController = require('../controllers/admin/delivery.controller');
 const productionRoutes = require('./admin/production.routes');
 const adminAuthMiddleware = require('../middleware/adminAuth.middleware');
+
+const salesActionController = require('../controllers/admin/salesController');
 const upload = require('../middleware/upload');
 
 // Apply admin authentication middleware to all routes
@@ -33,6 +35,12 @@ router.get('/delivery', DeliveryController.getDeliveries.bind(DeliveryController
 router.get('/delivery/:id', DeliveryController.getById.bind(DeliveryController));
 router.put('/delivery/:id', DeliveryController.update.bind(DeliveryController));
 router.delete('/delivery/:id', DeliveryController.delete.bind(DeliveryController));
+
+router.get('/:type', salesActionController.getAll);
+router.get('/:type/:id', salesActionController.getById);
+router.post('/:type', salesActionController.create);
+router.put('/:type/:id', salesActionController.update);
+router.delete('/:type/:id', salesActionController.delete);
 
 
 // Production routes

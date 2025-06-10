@@ -315,7 +315,10 @@ class WcutBagmakingController {
 
   async handleMoveToBagmaking(req, res) {
     const { orderId } = req.params;
+    const { scrapQuantity } = req.body;
 
+    console.log(' req.body', req.body)
+    // return false;
     try {
       // 1️⃣ Update ProductionManager progress to "W-Cut Bag Making"
       const updatedProductionManager = await ProductionManager.findOneAndUpdate(
@@ -339,7 +342,9 @@ class WcutBagmakingController {
       const updatedFlexo = await Flexo.findOneAndUpdate(
         { order_id: orderId },
         {
-          $set: { status: "delivered" }  // Change to "w_cut_bagmaking"
+          $set: { status: "delivered" },  // Change to "w_cut_bagmaking"
+          scrapQuantity: scrapQuantity || 0
+
         },
         { new: true }
       );
@@ -586,7 +591,7 @@ class WcutBagmakingController {
 
   async directBilling(req, res) {
     const { orderId } = req.params;
-    const { type } = req.body;
+    const { type, scrapQuantity } = req.body;
 
     try {
       // 1️⃣ Find and remove the DcutBagmaking record
@@ -601,6 +606,9 @@ class WcutBagmakingController {
       }
 
       opsertRecord.status = 'delivered';
+      if (scrapQuantity !== undefined) {
+        opsertRecord.scrapQuantity = scrapQuantity;
+      }
       await opsertRecord.save();
 
 

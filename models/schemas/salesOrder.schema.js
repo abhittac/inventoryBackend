@@ -10,7 +10,7 @@ const salesOrderSchema = new mongoose.Schema({
   },
   email: {
     type: String,
-    required: true,
+    required: false,
     trim: true,
     lowercase: true
   },
@@ -65,6 +65,9 @@ const salesOrderSchema = new mongoose.Schema({
     unique: true,
     required: true
   },
+  gstNo: { type: String },
+  contactPerson: { type: String },
+  remarks: { type: String },
   productionManager: { type: mongoose.Schema.Types.ObjectId, ref: 'ProductionManager' },
   createdAt: {
     type: Date,

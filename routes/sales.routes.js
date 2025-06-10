@@ -3,6 +3,7 @@ const router = express.Router();
 const SalesOrderController = require('../controllers/salesOrder.controller');
 const authMiddleware = require('../middleware/auth.middleware');
 
+const salesActionController = require('../controllers/admin/salesController');
 // Apply authentication middleware to all routes
 router.use(authMiddleware);
 
@@ -16,5 +17,6 @@ router.delete('/orders/:id', SalesOrderController.deleteOrder.bind(SalesOrderCon
 router.get('/orders/get/mobile-numbers', SalesOrderController.getOrdersByMobileNumber.bind(SalesOrderController));
 router.get('/orders/list/mobile-numbers', SalesOrderController.listAllMobileNumbers.bind(SalesOrderController));
 
+router.get('/bag-attributes', salesActionController.getAllAttributes);
 
 module.exports = router;

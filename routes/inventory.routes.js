@@ -7,7 +7,7 @@ const PurchaseOrderController = require("../controllers/inventory/purchaseOrder.
 const InvoiceController = require("../controllers/inventory/invoice.controller");
 const PackageController = require("../controllers/inventory/package.controller");
 const DeliveryController = require("../controllers/inventory/delivery.controller");
-
+const salesActionController = require('../controllers/admin/salesController');
 // Apply authentication middleware to all routes
 router.use(authMiddleware);
 
@@ -113,6 +113,10 @@ router.post(
   "/package/order/addOrder/:orderId",
   PackageController.createPackage.bind(PackageController)
 );
+
+
+router.get('/bag-attributes', salesActionController.getAllAttributes);
+
 
 router.get("/delivery", DeliveryController.list.bind(DeliveryController));
 router.put("/delivery/:id", DeliveryController.update.bind(DeliveryController));

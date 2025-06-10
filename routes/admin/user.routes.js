@@ -9,4 +9,5 @@ router.put('/:id',
   UserController.updateUser.bind(UserController)
 );
 
+
 module.exports = router;

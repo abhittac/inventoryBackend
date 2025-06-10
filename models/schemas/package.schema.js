@@ -7,17 +7,17 @@ const packageDetailsSchema = new mongoose.Schema({
   },
   length: {
     type: Number,
-    required: true,
+    required: false,
     min: 0
   },
   width: {
     type: Number,
-    required: true,
+    required: false,
     min: 0
   },
   height: {
     type: Number,
-    required: true,
+    required: false,
     min: 0
   },
   weight: {

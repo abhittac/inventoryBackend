@@ -78,6 +78,7 @@ class PackageController {
     try {
       const { order_id, package_details } = req.body;
 
+      console.log('req.body', req.body);
       // Validate required fields
       if (!order_id || !Array.isArray(package_details) || package_details.length === 0) {
         return res.status(400).json({
@@ -88,21 +89,59 @@ class PackageController {
 
       // Validate each package detail
       for (const pkg of package_details) {
+        if (typeof pkg.weight !== "number") {
+          return res.status(400).json({
+            success: false,
+            message: "Each package detail must have a numeric weight."
+          });
+        }
+
+        // Optional fields can be undefined or null, or numbers
         if (
-          typeof pkg.length !== "number" ||
-          typeof pkg.width !== "number" ||
-          typeof pkg.height !== "number" ||
-          typeof pkg.weight !== "number"
+          (pkg.length !== undefined && pkg.length !== null && typeof pkg.length !== "number") ||
+          (pkg.width !== undefined && pkg.width !== null && typeof pkg.width !== "number") ||
+          (pkg.height !== undefined && pkg.height !== null && typeof pkg.height !== "number")
         ) {
           return res.status(400).json({
             success: false,
-            message: "Each package detail must have numeric length, width, height, and weight."
+            message: "Optional fields (length, width, height) must be numbers, null, or undefined."
           });
         }
       }
 
-      // Find the existing package by order_id
+      // ✅ Step 1: Fetch the order to get total quantity
+      const order = await SalesOrder.findOne({ orderId: order_id });
+
+      if (!order) {
+        return res.status(404).json({
+          success: false,
+          message: "Order not found."
+        });
+      }
+      const totalQuantity = order.quantity;
+
+      // ✅ Step 2: Get existing package weight (if any)
       let existingPackage = await Package.findOne({ order_id });
+      let existingWeight = 0;
+
+      if (existingPackage && Array.isArray(existingPackage.package_details)) {
+        existingWeight = existingPackage.package_details.reduce((sum, pkg) => sum + (pkg.weight || 0), 0);
+      }
+
+      // ✅ Step 3: Sum new incoming weights
+      const newWeight = package_details.reduce((sum, pkg) => sum + pkg.weight, 0);
+
+      // ✅ Step 4: Check if total weight exceeds quantity + 10
+      const allowedLimit = totalQuantity + 10;
+      const totalWeightAfterAdd = existingWeight + newWeight;
+
+      if (totalWeightAfterAdd > allowedLimit) {
+        return res.status(400).json({
+          success: false,
+          message: `Total weight after adding (${totalWeightAfterAdd}) exceeds allowed limit (${allowedLimit}).`
+        });
+      }
+
 
       if (existingPackage) {
         // Append new package_details to the existing package

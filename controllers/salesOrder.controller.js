@@ -20,7 +20,7 @@ class SalesOrderController {
   }
   async getOrders(req, res) {
     try {
-      const { status, agent } = req.query;  // Extracting query parameters
+      const { status, agent } = req.query;
       const orders = await SalesOrderService.getOrders({ status, agent });
 
       // Sorting orders by createdAt in descending order
