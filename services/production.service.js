@@ -94,7 +94,7 @@ class ProductionService {
           }
         },
         { $unwind: '$orderDetails' },
-        { $sort: { productionDate: -1 } }
+        { $sort: { updatedAt: -1 } }
       ]);
 
       return { data: flexoDocuments };
@@ -153,7 +153,7 @@ class ProductionService {
           }
         },
         { $unwind: '$orderDetails' },
-        { $sort: { productionDate: -1 } }
+        { $sort: { updatedAt: -1 } }
       ]);
 
       return { data: flexoDocuments };

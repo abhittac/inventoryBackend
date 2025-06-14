@@ -139,6 +139,7 @@ class OpsertController {
 
   static async moveToDelivery(req, res) {
     const { id } = req.params;
+    // const { scrapQuantity } = req.body;
     try {
       // Step 1: Update status in `orders_opsert` table to "delivery"
       const opsertRecord = await Opsert.findOne({
@@ -150,6 +151,9 @@ class OpsertController {
       }
 
       opsertRecord.status = 'delivered';
+      // if (scrapQuantity !== undefined) {
+      //   opsertRecord.scrapQuantity = scrapQuantity;
+      // }
       await opsertRecord.save();
 
       // Step 2: Find and update `production_manager` table

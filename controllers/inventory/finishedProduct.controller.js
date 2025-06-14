@@ -133,7 +133,12 @@ class FinishedProductController {
         flexDate = productionDetails?.updatedAt || "N/A";
         wcutDate = wcutData?.updatedAt || "N/A";
 
+        if (productionDetails && wcutData?.scrapQuantity) {
+          productionDetails.scrapQuantity = wcutData.scrapQuantity;
+        }
+
       } else if (productionManager?.production_details?.type === 'DCut') {
+
         productionDetails = await DcutBagmaking.findOne({ order_id: product.order_id }).populate({
           path: 'subcategoryIds',
           model: 'Subcategory',
@@ -147,9 +152,28 @@ class FinishedProductController {
 
         dcutDate = dcutData?.updatedAt || "N/A";
         opsertDate = opsertData?.updatedAt || "N/A";
+
+        if (productionDetails && opsertData?.scrapQuantity) {
+          productionDetails.scrapQuantity = opsertData.scrapQuantity;
+        }
       }
 
       console.log("Production Details with Populated Subcategory:", productionDetails);
+
+
+      // === ✅ Quantity Calculations ===
+      let totalQuantity = 0;
+      let scrapQuantity = 0;
+      let remainingQuantity = 0;
+
+      if (productionDetails?.subcategoryIds && Array.isArray(productionDetails.subcategoryIds)) {
+        totalQuantity = productionDetails.subcategoryIds.reduce((sum, sub) => {
+          return sum + Number(sub.quantity || 0);
+        }, 0);
+      }
+
+      scrapQuantity = Number(productionDetails?.scrapQuantity || 0);
+      remainingQuantity = totalQuantity - scrapQuantity;
 
       // Combine all data and return it in the response
       const productWithDetails = {
@@ -170,7 +194,10 @@ class FinishedProductController {
           wcut: wcutUnitNumber,
           dcut: dcutUnitNumber,
           opsert: opsertUnitNumber
-        }
+        },
+        totalQuantity,
+        scrapQuantity,
+        remainingQuantity
       };
 
 

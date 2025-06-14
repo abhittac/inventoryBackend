@@ -155,9 +155,9 @@ class WcutBagmakingController {
       if (!existingRecord.subcategoryIds.includes(id)) {
         return res.status(400).json({ success: false, message: "Invalid QR code. Subcategory does not belong to this order." });
       }
-      // if (id !== materialId) {
-      //   return res.status(400).json({ success: false, message: "Invalid QR code. Subcategory ID does not match material ID." });
-      // }
+      if (id !== materialId) {
+        return res.status(400).json({ success: false, message: "Wrong QR code selected. Material does not match the expected quantity." });
+      }
 
       console.log("-----------------------------------------------");
       console.log("Matched Subcategory - subcategoryIds:", subcategoryIds);
@@ -315,7 +315,6 @@ class WcutBagmakingController {
 
   async handleMoveToBagmaking(req, res) {
     const { orderId } = req.params;
-    const { scrapQuantity } = req.body;
 
     console.log(' req.body', req.body)
     // return false;
@@ -343,8 +342,6 @@ class WcutBagmakingController {
         { order_id: orderId },
         {
           $set: { status: "delivered" },  // Change to "w_cut_bagmaking"
-          scrapQuantity: scrapQuantity || 0
-
         },
         { new: true }
       );
@@ -533,6 +530,7 @@ class WcutBagmakingController {
 
   async moveToDelivery(req, res) {
     const { id } = req.params;
+    const { scrapQuantity } = req.body;
     try {
       // Step 1: Update status in `orders_opsert` table to "delivery"
       const opsertRecord = await WcutBagmaking.findOne({
@@ -546,6 +544,9 @@ class WcutBagmakingController {
       }
 
       opsertRecord.status = 'delivered';  // Use "delivery", not "delivered"
+      if (scrapQuantity !== undefined) {
+        opsertRecord.scrapQuantity = scrapQuantity;
+      }
       await opsertRecord.save();
 
       // Step 2: Find and update `production_manager` table
@@ -591,7 +592,7 @@ class WcutBagmakingController {
 
   async directBilling(req, res) {
     const { orderId } = req.params;
-    const { type, scrapQuantity } = req.body;
+    const { type } = req.body;
 
     try {
       // 1️⃣ Find and remove the DcutBagmaking record
@@ -606,9 +607,6 @@ class WcutBagmakingController {
       }
 
       opsertRecord.status = 'delivered';
-      if (scrapQuantity !== undefined) {
-        opsertRecord.scrapQuantity = scrapQuantity;
-      }
       await opsertRecord.save();
 
 

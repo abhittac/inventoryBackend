@@ -156,9 +156,9 @@ class DcutBagmakingController {
       if (!existingRecord.subcategoryIds.includes(id)) {
         return res.status(400).json({ success: false, message: "Invalid QR code. Subcategory does not belong to this order." });
       }
-      // if (id !== materialId) {
-      //   return res.status(400).json({ success: false, message: "Invalid QR code. Subcategory ID does not match material ID." });
-      // }
+      if (id !== materialId) {
+        return res.status(400).json({ success: false, message: "Wrong QR code selected. Material does not match the expected quantity." });
+      }
 
       console.log('-----------------------------------------------');
       console.log("Matched Subcategory - GSM:", matchedSubcategory.gsm);

@@ -27,11 +27,6 @@ const flexoSchema = new mongoose.Schema({
       required: true
     }
   ],
-  scrapQuantity: {
-    type: Number,
-    default: 0,
-    min: 0
-  },
   createdAt: {
     type: Date,
     default: Date.now

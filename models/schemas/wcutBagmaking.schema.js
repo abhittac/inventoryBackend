@@ -44,6 +44,11 @@ const wcutBagmakingSchema = new mongoose.Schema({
     type: String,
     trim: false
   },
+  scrapQuantity: {
+    type: Number,
+    required: false,
+    min: 0
+  },
   createdAt: {
     type: Date,
     default: Date.now
