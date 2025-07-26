@@ -1,21 +1,24 @@
-const Delivery = require('../models/Delivery');
-const SalesOrder = require('../models/SalesOrder');
-const User = require('../models/User');
-const UserService = require('../services/user.service');
-const logger = require('../utils/logger');
+const Delivery = require("../models/Delivery");
+const SalesOrder = require("../models/SalesOrder");
+const User = require("../models/User");
+const UserService = require("../services/user.service");
+const logger = require("../utils/logger");
 
 class AdminController {
   async getUsers(req, res) {
     try {
-      const { search, status } = req.query;  // Get only search and status filters
-      const users = await UserService.getUsers({ search, status });  // Pass only the filters
+      const { search, status } = req.query;
+      const users = await UserService.getUsers({ search, status });
+
+      // Ensure newest users are on top if DB doesn't handle it
+      users.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 
       res.json({
         success: true,
-        data: users,  // Return the filtered list of users
+        data: users,
       });
     } catch (error) {
-      logger.error('Error fetching users:', error);
+      logger.error("Error fetching users:", error);
       res.status(500).json({
         success: false,
         message: error.message,
@@ -23,13 +26,12 @@ class AdminController {
     }
   }
 
-
   async dashboardOverview(req, res) {
     try {
       // Fetch all completed sales orders with only the 'orderPrice' field
       const salesOrders = await SalesOrder.find(
-        { status: "completed" },    // Filter condition
-        { orderPrice: 1, _id: 0 }   // Select only orderPrice field
+        { status: "completed" }, // Filter condition
+        { orderPrice: 1, _id: 0 } // Select only orderPrice field
       );
 
       // Ensure orderPrice values are treated as numbers
@@ -40,10 +42,10 @@ class AdminController {
 
       console.log("Total Order Value:", totalOrderValue);
 
-
-
       // Fetch total pending deliveries
-      const totalPendingDeliveries = await Delivery.countDocuments({ status: "pending" });
+      const totalPendingDeliveries = await Delivery.countDocuments({
+        status: "pending",
+      });
 
       // Fetch total active users
       const totalActiveUsers = await User.countDocuments({ status: "active" });
@@ -61,16 +63,14 @@ class AdminController {
           totalSalesOrders,
         },
       });
-    }
-    catch (error) {
-      logger.error('error fetching overview', error);
+    } catch (error) {
+      logger.error("error fetching overview", error);
       res.status(500).json({
         success: false,
-        message: error.message
+        message: error.message,
       });
     }
   }
-
 
   async getUserById(req, res) {
     try {
@@ -79,15 +79,14 @@ class AdminController {
 
       res.json({
         success: true,
-        data: user
+        data: user,
       });
     } catch (error) {
-      logger.error('Error fetching user by ID:', error);
-      res.status(error.message === 'User not found' ? 404 : 500)
-        .json({
-          success: false,
-          message: error.message
-        });
+      logger.error("Error fetching user by ID:", error);
+      res.status(error.message === "User not found" ? 404 : 500).json({
+        success: false,
+        message: error.message,
+      });
     }
   }
 
@@ -101,13 +100,13 @@ class AdminController {
       const user = await UserService.createUser(userData);
       res.status(201).json({
         success: true,
-        data: user
+        data: user,
       });
     } catch (error) {
-      logger.error('Error creating user:', error);
+      logger.error("Error creating user:", error);
       res.status(400).json({
         success: false,
-        message: error.message
+        message: error.message,
       });
     }
   }
@@ -120,15 +119,14 @@ class AdminController {
       const user = await UserService.updateUser(id, userData);
       res.json({
         success: true,
-        data: user
+        data: user,
       });
     } catch (error) {
-      logger.error('Error updating user:', error);
-      res.status(error.message === 'User not found' ? 404 : 400)
-        .json({
-          success: false,
-          message: error.message
-        });
+      logger.error("Error updating user:", error);
+      res.status(error.message === "User not found" ? 404 : 400).json({
+        success: false,
+        message: error.message,
+      });
     }
   }
 
@@ -139,15 +137,14 @@ class AdminController {
 
       res.json({
         success: true,
-        message: 'User deactivated successfully'
+        message: "User deactivated successfully",
       });
     } catch (error) {
-      logger.error('Error deleting user:', error);
-      res.status(error.message === 'User not found' ? 404 : 500)
-        .json({
-          success: false,
-          message: error.message
-        });
+      logger.error("Error deleting user:", error);
+      res.status(error.message === "User not found" ? 404 : 500).json({
+        success: false,
+        message: error.message,
+      });
     }
   }
 }
