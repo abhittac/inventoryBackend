@@ -1,6 +1,8 @@
 const SalesOrderService = require("../services/salesOrder.service");
 const { salesOrderSchema } = require("../validators/salesOrder.validator");
 const logger = require("../utils/logger");
+const ProductionManager = require("../models/ProductionManager");
+const SalesOrder = require("../models/SalesOrder");
 
 class SalesOrderController {
   async createOrder(req, res) {
@@ -68,6 +70,26 @@ class SalesOrderController {
     }
   }
 
+  // async updateOrder(req, res) {
+  //   try {
+  //     const { error, value } = salesOrderSchema.validate(req.body);
+  //     if (error) {
+  //       return res
+  //         .status(400)
+  //         .json({ success: false, message: error.details[0].message });
+  //     }
+
+  //     const order = await SalesOrderService.updateOrder(req.params.id, value);
+  //     res.json({
+  //       success: true,
+  //       data: order,
+  //       message: "Order updated successfully",
+  //     });
+  //   } catch (error) {
+  //     logger.error("Error in update order controller:", error);
+  //     res.status(404).json({ success: false, message: error.message });
+  //   }
+  // }
   async updateOrder(req, res) {
     try {
       const { error, value } = salesOrderSchema.validate(req.body);
@@ -77,7 +99,19 @@ class SalesOrderController {
           .json({ success: false, message: error.details[0].message });
       }
 
-      const order = await SalesOrderService.updateOrder(req.params.id, value);
+      const order = await SalesOrder.findByIdAndUpdate(req.params.id, value, {
+        new: true,
+      });
+
+      // Update the quantity in the production_manager collection
+      const productionManager = await ProductionManager.findOne({
+        order_id: order.orderId,
+      });
+      if (productionManager) {
+        productionManager.production_details.quantity_kgs = order.quantity;
+        await productionManager.save();
+      }
+
       res.json({
         success: true,
         data: order,
@@ -88,7 +122,6 @@ class SalesOrderController {
       res.status(404).json({ success: false, message: error.message });
     }
   }
-
   async deleteOrder(req, res) {
     try {
       await SalesOrderService.deleteOrder(req.params.id);
@@ -120,12 +153,10 @@ class SalesOrderController {
 
       // If no orders found, return 404
       if (orders.length === 0) {
-        return res
-          .status(404)
-          .json({
-            success: false,
-            message: "No orders found for this mobile number",
-          });
+        return res.status(404).json({
+          success: false,
+          message: "No orders found for this mobile number",
+        });
       }
 
       // Return the orders
