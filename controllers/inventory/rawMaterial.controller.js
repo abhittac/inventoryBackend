@@ -311,21 +311,36 @@ class RawMaterialController {
         });
       }
 
-      // Find and delete the raw material
-      const material = await RawMaterial.findByIdAndDelete(id);
 
-      if (!material) {
-        return res.status(404).json({
-          success: false,
-          message: "Raw material not found.",
-        });
-      }
+      // Step 2: Find the raw material
+    const material = await RawMaterial.findById(id);
 
-      res.json({
-        success: true,
-        message: "Raw material deleted successfully.",
-        data: material,
+    if (!material) {
+      return res.status(404).json({
+        success: false,
+        message: "Raw material not found.",
       });
+    }
+    console.log(`Deleted raw material with ID: ${material._id}`);
+
+
+    // Step 3: Delete all subcategories related to this raw material's category
+    const deletedSubcategories = await Subcategory.deleteMany({
+      category: material._id,
+    });
+
+    console.log(`Deleted ${deletedSubcategories.deletedCount} subcategories`);
+    // return false;
+    
+    // Step 4: Now delete the raw material
+    await RawMaterial.findByIdAndDelete(id);
+
+       return res.json({
+      success: true,
+      message: "Raw material and related subcategories deleted successfully.",
+      deletedSubcategoriesCount: deletedSubcategories.deletedCount,
+      data: material,
+    });
     } catch (error) {
       logger.error("Error deleting raw material:", error);
 

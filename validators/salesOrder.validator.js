@@ -5,9 +5,10 @@ const bagDetailsSchema = Joi.object({
     type: Joi.string().required().messages({
         "string.empty": "Bag type is required."
     }),
-    handleColor: Joi.string().allow("").messages({
-        "string.base": "Handle color must be a string."
+    handleColor: Joi.string().allow('').optional().messages({
+    "string.base": "Handle color must be a string.",
     }),
+
     size: Joi.string().required().messages({
         "string.empty": "Bag size is required."
     }),
@@ -29,10 +30,10 @@ const salesOrderSchema = Joi.object({
     customerName: Joi.string().required().messages({
         "string.empty": "Customer name is required."
     }),
-    email: Joi.string().email().optional().messages({
-        "string.email": "Enter a valid email address.",
-        "string.empty": "Email is required."
+  email: Joi.string().email().allow('').optional().messages({
+    "string.email": "Enter a valid email address.",
     }),
+
     mobileNumber: Joi.string().pattern(/^[0-9]{10}$/).required().messages({
         "string.pattern.base": "Mobile number must be exactly 10 digits.",
         "string.empty": "Mobile number is required."
