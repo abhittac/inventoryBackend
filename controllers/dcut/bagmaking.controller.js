@@ -733,7 +733,7 @@ class DcutBagmakingController {
       // Fetch matching subcategory records
       const subcategoryMatches = await Subcategory.find({
         _id: { $in: subcategoryIds },  // Filter by the subcategory IDs from Flexo
-        status: 'active'
+        // status: 'active'
       });
 
       console.log('subcategoryMatches', subcategoryMatches);
