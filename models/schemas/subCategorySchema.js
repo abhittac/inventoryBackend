@@ -36,6 +36,11 @@ const SubCategorySchema = new mongoose.Schema(
       enum: ['active', 'inactive'],
       default: 'active'
     },
+     is_used: {
+            type: Boolean,
+            default: false,
+      },
+      
   },
   { timestamps: true }
 );

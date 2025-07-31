@@ -954,7 +954,8 @@ class WcutBagmakingController {
       });
 
       console.log('subcategoryMatches', subcategoryMatches);
-      if (!subcategoryMatches || subcategoryMatches.length === 0) {
+      if (!subcategoryMatches || subcategoryMatches.length === 0)
+      {
         return res.json({
           success: false,
           totalQuantity: 0,

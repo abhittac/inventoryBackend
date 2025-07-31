@@ -28,6 +28,8 @@ class ProductionManagerController {
 
   async updateData(req, res) {
     console.log("Request data:", req.body);
+
+    // return false;
     try {
       const { order_id } = req.params;
       const { type, roll_size, quantity_kgs, quantity_rolls } = req.body;
@@ -74,6 +76,7 @@ class ProductionManagerController {
         gsm,
         fabricQuality,
         status: "active",
+        is_used: false,
       });
 
       // if (!subcategoryMatches.length) {
@@ -82,33 +85,58 @@ class ProductionManagerController {
 
       console.log("Matching subcategories:", subcategoryMatches);
 
+      // Get all used subcategoryIds from Flexo and Dcut
+      const usedInFlexo = await Flexo.find({ subcategoryIds: { $in: subcategoryMatches.map((s) => s._id) } });
+      const usedInDcut = await DcutBagmaking.find({ subcategoryIds: { $in: subcategoryMatches.map((s) => s._id) } });
+
+      const usedIds = new Set([
+        ...usedInFlexo.flatMap((doc) => doc.subcategoryIds.map(String)),
+        ...usedInDcut.flatMap((doc) => doc.subcategoryIds.map(String)),
+      ]);
+
+      // Filter out used ones
+      subcategoryMatches = subcategoryMatches.filter((s) => !usedIds.has(String(s._id)));
+    
       // Sort subcategory matches in descending order (to use largest rolls first)
       subcategoryMatches.sort((a, b) => b.quantity - a.quantity);
 
+
+      // Select required rolls dynamically until quantity_kgs and quantity_rolls are met
       // Select required rolls dynamically until quantity_kgs and quantity_rolls are met
       let selectedMaterials = [];
       let totalSelectedKg = 0;
       let totalRollsSelected = 0;
 
       for (const roll of subcategoryMatches) {
-        if (
-          totalRollsSelected < quantity_rolls &&
-          totalSelectedKg < quantity_kgs
-        ) {
+        if (totalRollsSelected < quantity_rolls && totalSelectedKg < quantity_kgs) {
           selectedMaterials.push(roll);
           totalSelectedKg += roll.quantity;
           totalRollsSelected++;
         }
-        if (
-          totalRollsSelected >= quantity_rolls ||
-          totalSelectedKg >= quantity_kgs
-        )
-          break;
+        if (totalRollsSelected >= quantity_rolls || totalSelectedKg >= quantity_kgs) break;
       }
 
       console.log(" totalRollsSelected:", totalRollsSelected);
       console.log(" quantity_rolls:", quantity_rolls);
-      // If not enough rolls are available
+
+      // If not enough weight, check how many rolls *would be needed* to meet the weight
+      if (totalSelectedKg < quantity_kgs) {
+        let requiredRollsToMeetWeight = 0;
+        let weightTracker = 0;
+
+        for (const roll of subcategoryMatches) {
+          weightTracker += roll.quantity;
+          requiredRollsToMeetWeight++;
+          if (weightTracker >= quantity_kgs) break;
+        }
+
+        return res.status(400).json({
+          success: false,
+          message: `Insufficient material weight. You need ${quantity_kgs} kg, but only ${totalSelectedKg} kg is available with ${totalRollsSelected} rolls. You may need at least ${requiredRollsToMeetWeight} rolls to fulfill the weight requirement.`,
+        });
+      }
+
+      // If not enough rolls
       if (totalRollsSelected < quantity_rolls) {
         return res.status(400).json({
           success: false,
@@ -116,16 +144,20 @@ class ProductionManagerController {
         });
       }
 
-      // If selected rolls do not meet required quantity
-      if (totalSelectedKg < quantity_kgs) {
-        return res.status(400).json({
-          success: false,
-          message: `Insufficient material weight. You need ${quantity_kgs} kg, but only ${totalSelectedKg} kg is available. Consider selecting different sizes or reducing the required weight.`,
-        });
-      }
       const subcategoryIds = selectedMaterials.map((item) => item._id);
+      
       console.log("subcategoryIds", subcategoryIds);
-      // Update or create ProductionManager entry
+    
+
+      if (subcategoryIds.length > 0) {
+          console.log('-----Enter it-----');
+          const result = await Subcategory.updateMany(
+            { _id: { $in: subcategoryIds } },
+            { $set: { is_used: true } }
+          );
+        }
+
+
       if (entry) {
         entry = await ProductionManager.findOneAndUpdate(
           { order_id },
@@ -142,32 +174,57 @@ class ProductionManagerController {
         await entry.save();
       }
 
-      // Insert into Flexo or DcutBagmaking if needed
       if (type === "WCut") {
-        const flexoExists = await Flexo.findOne({ order_id });
-        if (!flexoExists) {
-          await new Flexo({
-            order_id,
-            status: "pending",
-            details: req.body,
-            subcategoryIds,
-            createdAt: new Date(),
-            updatedAt: new Date(),
-          }).save();
-        }
-      } else if (type === "DCut") {
-        const dcutExists = await DcutBagmaking.findOne({ order_id });
-        if (!dcutExists) {
-          await new DcutBagmaking({
-            order_id,
-            status: "pending",
-            details: req.body,
-            subcategoryIds,
-            createdAt: new Date(),
-            updatedAt: new Date(),
-          }).save();
-        }
+      const existingFlexo = await Flexo.findOne({ order_id });
+
+      if (!existingFlexo) {
+        await new Flexo({
+          order_id,
+          status: "pending",
+          details: req.body,
+          subcategoryIds,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        }).save();
+      } else {
+        // ✅ Update existing document
+        await Flexo.updateOne(
+          { order_id },
+          {
+            $set: {
+              details: req.body,
+              subcategoryIds,
+              updatedAt: new Date(),
+            },
+          }
+        );
       }
+    } else if (type === "DCut") {
+      const existingDCut = await DcutBagmaking.findOne({ order_id });
+
+      if (!existingDCut) {
+        await new DcutBagmaking({
+          order_id,
+          status: "pending",
+          details: req.body,
+          subcategoryIds,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        }).save();
+      } else {
+        // ✅ Update existing document
+        await DcutBagmaking.updateOne(
+          { order_id },
+          {
+            $set: {
+              details: req.body,
+              subcategoryIds,
+              updatedAt: new Date(),
+            },
+          }
+        );
+      }
+    }
 
       res.status(200).json({
         success: true,
