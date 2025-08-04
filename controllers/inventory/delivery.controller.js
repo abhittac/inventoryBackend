@@ -69,7 +69,7 @@ class DeliveryController {
         }
     }
 
-    async list(req, res) {
+       async list(req, res) {
         try {
             const {
                 status,
@@ -80,7 +80,7 @@ class DeliveryController {
                 page,
                 limit
             } = req.query;
-            console.log('delivery', req.query);
+            console.log('deliveryfsdfsfs', req.query);
             const result = await DeliveryQueryService.list({
                 status,
                 dateRange,

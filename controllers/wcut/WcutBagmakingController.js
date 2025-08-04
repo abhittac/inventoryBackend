@@ -215,8 +215,12 @@ class WcutBagmakingController {
           if (matchedSubcategory.quantity === material.quantity && remainingQuantity == 0) {
             await Subcategory.findByIdAndUpdate(material._id, { status: "inactive" });
           } else if (remainingQuantity !== 0) {
-            await Subcategory.findByIdAndUpdate(material._id, { quantity: remainingQuantity });
+            await Subcategory.findByIdAndUpdate(material._id, {
+              quantity: remainingQuantity,
+              is_used: false, // ✅ update status to active
+            });
           }
+
           await ProductionManager.findOneAndUpdate(
             { order_id: orderId },
             { "production_details.remaining_quantity": 0 },
