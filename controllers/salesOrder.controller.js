@@ -34,9 +34,23 @@ class SalesOrderController {
       res.json({
         success: true,
         data: sortedOrders,
+        response: "checlked",
       });
     } catch (error) {
       logger.error("Error in get orders controller:", error);
+      res.status(500).json({ success: false, message: error.message });
+    }
+  }
+  async getSalesOrderStats(req, res) {
+    try {
+      console.log("inside getSalesOrderStats controller:");
+      const stats = await SalesOrderService.getSalesOrderStats();
+      res.json({
+        success: true,
+        data: stats,
+      });
+    } catch (error) {
+      logger.error("Error in getSalesOrderStats controller:", error);
       res.status(500).json({ success: false, message: error.message });
     }
   }
