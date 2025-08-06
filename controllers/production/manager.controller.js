@@ -86,8 +86,12 @@ class ProductionManagerController {
       console.log("Matching subcategories:", subcategoryMatches);
 
       // Get all used subcategoryIds from Flexo and Dcut
-      const usedInFlexo = await Flexo.find({ subcategoryIds: { $in: subcategoryMatches.map((s) => s._id) } });
-      const usedInDcut = await DcutBagmaking.find({ subcategoryIds: { $in: subcategoryMatches.map((s) => s._id) } });
+      const usedInFlexo = await Flexo.find({
+        subcategoryIds: { $in: subcategoryMatches.map((s) => s._id) },
+      });
+      const usedInDcut = await DcutBagmaking.find({
+        subcategoryIds: { $in: subcategoryMatches.map((s) => s._id) },
+      });
 
       const usedIds = new Set([
         ...usedInFlexo.flatMap((doc) => doc.subcategoryIds.map(String)),
@@ -95,11 +99,12 @@ class ProductionManagerController {
       ]);
 
       // Filter out used ones
-      subcategoryMatches = subcategoryMatches.filter((s) => !usedIds.has(String(s._id)));
-    
+      subcategoryMatches = subcategoryMatches.filter(
+        (s) => !usedIds.has(String(s._id))
+      );
+
       // Sort subcategory matches in descending order (to use largest rolls first)
       subcategoryMatches.sort((a, b) => b.quantity - a.quantity);
-
 
       // Select required rolls dynamically until quantity_kgs and quantity_rolls are met
       // Select required rolls dynamically until quantity_kgs and quantity_rolls are met
@@ -108,12 +113,19 @@ class ProductionManagerController {
       let totalRollsSelected = 0;
 
       for (const roll of subcategoryMatches) {
-        if (totalRollsSelected < quantity_rolls && totalSelectedKg < quantity_kgs) {
+        if (
+          totalRollsSelected < quantity_rolls &&
+          totalSelectedKg < quantity_kgs
+        ) {
           selectedMaterials.push(roll);
           totalSelectedKg += roll.quantity;
           totalRollsSelected++;
         }
-        if (totalRollsSelected >= quantity_rolls || totalSelectedKg >= quantity_kgs) break;
+        if (
+          totalRollsSelected >= quantity_rolls ||
+          totalSelectedKg >= quantity_kgs
+        )
+          break;
       }
 
       console.log(" totalRollsSelected:", totalRollsSelected);
@@ -145,18 +157,16 @@ class ProductionManagerController {
       }
 
       const subcategoryIds = selectedMaterials.map((item) => item._id);
-      
+
       console.log("subcategoryIds", subcategoryIds);
-    
 
       if (subcategoryIds.length > 0) {
-          console.log('-----Enter it-----');
-          const result = await Subcategory.updateMany(
-            { _id: { $in: subcategoryIds } },
-            { $set: { is_used: true } }
-          );
-        }
-
+        console.log("-----Enter it-----");
+        const result = await Subcategory.updateMany(
+          { _id: { $in: subcategoryIds } },
+          { $set: { is_used: true } }
+        );
+      }
 
       if (entry) {
         entry = await ProductionManager.findOneAndUpdate(
@@ -175,56 +185,56 @@ class ProductionManagerController {
       }
 
       if (type === "WCut") {
-      const existingFlexo = await Flexo.findOne({ order_id });
+        const existingFlexo = await Flexo.findOne({ order_id });
 
-      if (!existingFlexo) {
-        await new Flexo({
-          order_id,
-          status: "pending",
-          details: req.body,
-          subcategoryIds,
-          createdAt: new Date(),
-          updatedAt: new Date(),
-        }).save();
-      } else {
-        // ✅ Update existing document
-        await Flexo.updateOne(
-          { order_id },
-          {
-            $set: {
-              details: req.body,
-              subcategoryIds,
-              updatedAt: new Date(),
-            },
-          }
-        );
-      }
-    } else if (type === "DCut") {
-      const existingDCut = await DcutBagmaking.findOne({ order_id });
+        if (!existingFlexo) {
+          await new Flexo({
+            order_id,
+            status: "pending",
+            details: req.body,
+            subcategoryIds,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+          }).save();
+        } else {
+          // ✅ Update existing document
+          await Flexo.updateOne(
+            { order_id },
+            {
+              $set: {
+                details: req.body,
+                subcategoryIds,
+                updatedAt: new Date(),
+              },
+            }
+          );
+        }
+      } else if (type === "DCut") {
+        const existingDCut = await DcutBagmaking.findOne({ order_id });
 
-      if (!existingDCut) {
-        await new DcutBagmaking({
-          order_id,
-          status: "pending",
-          details: req.body,
-          subcategoryIds,
-          createdAt: new Date(),
-          updatedAt: new Date(),
-        }).save();
-      } else {
-        // ✅ Update existing document
-        await DcutBagmaking.updateOne(
-          { order_id },
-          {
-            $set: {
-              details: req.body,
-              subcategoryIds,
-              updatedAt: new Date(),
-            },
-          }
-        );
+        if (!existingDCut) {
+          await new DcutBagmaking({
+            order_id,
+            status: "pending",
+            details: req.body,
+            subcategoryIds,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+          }).save();
+        } else {
+          // ✅ Update existing document
+          await DcutBagmaking.updateOne(
+            { order_id },
+            {
+              $set: {
+                details: req.body,
+                subcategoryIds,
+                updatedAt: new Date(),
+              },
+            }
+          );
+        }
       }
-    }
 
       res.status(200).json({
         success: true,
