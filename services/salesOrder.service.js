@@ -154,7 +154,9 @@ class SalesOrderService {
       const completedOrders = allOrders.filter(
         (o) => o.status === "completed"
       ).length;
-
+      const cancelledOrders = allOrders.filter(
+        (o) => o.status === "cancelled"
+      ).length;
       const totalAmount = allOrders.reduce((acc, order) => {
         const price = parseFloat(order.orderPrice || "0");
         return acc + (isNaN(price) ? 0 : price);
@@ -172,7 +174,9 @@ class SalesOrderService {
         const price = parseFloat(order.orderPrice || "0");
         return acc + (isNaN(price) ? 0 : price);
       }, 0);
-
+      const lastMonthCancelled = lastMonthOrders.filter(
+        (o) => o.status === "cancelled"
+      ).length;
       // 🔹 CURRENT MONTH COUNTS (for % comparison)
       const currentMonthTotal = currentMonthOrders.length;
       const currentMonthPending = currentMonthOrders.filter(
@@ -185,7 +189,9 @@ class SalesOrderService {
         const price = parseFloat(order.orderPrice || "0");
         return acc + (isNaN(price) ? 0 : price);
       }, 0);
-
+      const currentMonthCancelled = currentMonthOrders.filter(
+        (o) => o.status === "cancelled"
+      ).length;
       return {
         totalOrders: {
           value: totalOrders,
@@ -206,6 +212,13 @@ class SalesOrderService {
           changeFromLastMonth: getPercentageChange(
             currentMonthCompleted,
             lastMonthCompleted
+          ),
+        },
+        cancelledOrders: {
+          value: cancelledOrders,
+          changeFromLastMonth: getPercentageChange(
+            currentMonthCancelled,
+            lastMonthCancelled
           ),
         },
         totalAmount: {
