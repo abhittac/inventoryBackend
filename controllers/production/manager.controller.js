@@ -15,10 +15,10 @@ class ProductionManagerController {
         { status, agent, type }
       );
 
-      console.log("order data list is ", orders);
       res.json({
         success: true,
         data: orders.data,
+        check: "new",
       });
     } catch (error) {
       logger.error("Error in get orders controller:", error);
@@ -246,6 +246,59 @@ class ProductionManagerController {
         success: false,
         message: error.message,
       });
+    }
+  }
+  async productionStats(req, res) {
+    try {
+      const { agent } = req.query;
+
+      // Fixed types
+      const typeDCut = "d_cut_loop_handle";
+      const typeWCut = "w_cut_box_bag";
+
+      // Fetch both order lists
+      const [dCutOrders, wCutOrders] = await Promise.all([
+        SalesOrderService.getOrdersListWithProductionManager({
+          agent,
+          type: typeDCut,
+        }),
+        SalesOrderService.getOrdersListWithProductionManager({
+          agent,
+          type: typeWCut,
+        }),
+      ]);
+
+      // Merge data
+      const allOrders = [
+        ...(dCutOrders.data || []),
+        ...(wCutOrders.data || []),
+      ];
+
+      // Calculate stats
+      const totalProducts = allOrders.length;
+      const activeOrders = allOrders.filter(
+        (o) => o.status === "pending"
+      ).length;
+      const completedOrders = allOrders.filter(
+        (o) => o.status === "completed"
+      ).length;
+      const efficiency =
+        totalProducts > 0
+          ? ((completedOrders / totalProducts) * 100).toFixed(2)
+          : 0;
+
+      res.json({
+        success: true,
+        data: {
+          totalProducts,
+          activeOrders,
+          completedOrders,
+          efficiency: `${efficiency}%`,
+        },
+      });
+    } catch (error) {
+      logger.error("Error in productionStats controller:", error);
+      res.status(500).json({ success: false, message: error.message });
     }
   }
 
