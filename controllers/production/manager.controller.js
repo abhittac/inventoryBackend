@@ -104,7 +104,8 @@ class ProductionManagerController {
       );
 
       // Sort subcategory matches in descending order (to use largest rolls first)
-      subcategoryMatches.sort((a, b) => b.quantity - a.quantity);
+
+      subcategoryMatches.sort((a, b) => a.quantity - b.quantity);
 
       // Select required rolls dynamically until quantity_kgs and quantity_rolls are met
       // Select required rolls dynamically until quantity_kgs and quantity_rolls are met
